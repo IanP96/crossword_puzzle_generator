@@ -1,0 +1,4 @@
+*.o
+main
+puzzle.txt
+solution.txt
