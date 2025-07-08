@@ -2,3 +2,6 @@
 main
 puzzle.txt
 solution.txt
+*.png
+*.jpg
+*.jpeg

@@ -1,6 +1,7 @@
 # Define variables
 CC = gcc
-CFLAGS = -Wall -g
+CFLAGS = -Wall -Wextra -I/opt/homebrew/include
+LDFLAGS = -L/opt/homebrew/lib -lgd -lpng -lz -ljpeg -lfreetype -lm
 
 # Define the executable name
 TARGET = main
@@ -17,11 +18,9 @@ OBJ = $(SRC:.c=.o)
 all: $(TARGET)
 
 $(TARGET): $(OBJ)
-	$(CC) $(CFLAGS) $^ -o $@
 
 # Rule to compile source files into object files
-%.o: %.c
-	$(CC) $(CFLAGS) -c $^ -o $@
+$(OBJ): $(SRC)
 
 # Clean target: removes generated files
 clean:

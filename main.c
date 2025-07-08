@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <gd.h>
 
 #define GRID_WIDTH 13
 #define GRID_HEIGHT GRID_WIDTH
@@ -392,7 +393,8 @@ void print_puzzle_to_file(FILE *file, Grid grid, char key[ALPHABET_SIZE], bool s
 void run_game()
 {
     Grid grid;
-    while (!create_grid(grid));
+    while (!create_grid(grid))
+        ;
     if (DEBUG)
     {
         printf("\nFinal grid:\n");
@@ -400,8 +402,8 @@ void run_game()
     }
     char key[ALPHABET_SIZE];
     encode_grid(grid, key);
-    FILE* puzzle_file = fopen(PUZZLE_FILE_NAME, "w");
-    FILE* solution_file = fopen(SOLUTION_FILE_NAME, "w");
+    FILE *puzzle_file = fopen(PUZZLE_FILE_NAME, "w");
+    FILE *solution_file = fopen(SOLUTION_FILE_NAME, "w");
 
     if (DEBUG)
     {
