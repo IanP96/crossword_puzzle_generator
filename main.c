@@ -21,8 +21,8 @@ char FIRST_LETTER = 'a';
 bool DEBUG = false;
 int8_t NO_NUMBER = -1;
 // todo tweak threshold
-// hide all letters in key before this threshold
-int THRESHOLD = ALPHABET_SIZE / 2;
+// hide all letters in key before this threshold. higher value -> harder
+int THRESHOLD = ALPHABET_SIZE / 2 + 1;
 
 typedef struct Cell
 {
