@@ -4,6 +4,11 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <gd.h>
+#include <gdfontt.h>
+#include <gdfonts.h>
+#include <gdfontmb.h>
+#include <gdfontl.h>
+#include <gdfontg.h>
 
 #define GRID_WIDTH 13
 #define GRID_HEIGHT GRID_WIDTH
@@ -19,7 +24,7 @@ int NUM_WORDS = 3103;
 char NO_LETTER = '_';
 char ALPHABET[] = "abcdefghijklmnopqrstuvwxyz";
 char FIRST_LETTER = 'a';
-bool DEBUG = false;
+bool DEBUG = true;
 int8_t NO_NUMBER = -1;
 // todo tweak threshold
 // hide all letters in key before this threshold. higher value -> harder
@@ -354,6 +359,7 @@ void encode_grid(Grid grid, char key[ALPHABET_SIZE])
                 if (letter == (*cell).letter)
                 {
                     (*cell).number = letter_num;
+                    break;
                 }
             }
         }
@@ -390,9 +396,7 @@ void print_puzzle_to_file(FILE *file, Grid grid, char key[ALPHABET_SIZE], bool s
     }
 }
 
-void run_game()
-{
-    Grid grid;
+void create_puzzle(Grid grid, char key[ALPHABET_SIZE]) {
     while (!create_grid(grid))
         ;
     if (DEBUG)
@@ -400,8 +404,10 @@ void run_game()
         printf("\nFinal grid:\n");
         print_grid_letters(grid);
     }
-    char key[ALPHABET_SIZE];
     encode_grid(grid, key);
+}
+
+void write_puzzle_to_text_files(Grid grid, char key[ALPHABET_SIZE]) {
     FILE *puzzle_file = fopen(PUZZLE_FILE_NAME, "w");
     FILE *solution_file = fopen(SOLUTION_FILE_NAME, "w");
 
@@ -415,8 +421,174 @@ void run_game()
     fclose(solution_file);
 }
 
-int main(int argc, char const *argv[])
+void run_game_with_text_files(void)
 {
-    run_game();
-    printf("Puzzle is ready!\n");
+    Grid grid;
+    char key[ALPHABET_SIZE];
+    create_puzzle(grid, key);
+
+    write_puzzle_to_text_files(grid, key);
+}
+
+void run_game_with_image(void) {
+    Grid grid;
+    char key[ALPHABET_SIZE];
+    create_puzzle(grid, key);
+
+    if (DEBUG)
+    {
+        write_puzzle_to_text_files(grid, key);
+    }
+    
+    // cell 51 x 51
+    int CELL_PIXEL_SIZE = 51;
+
+    /* Declare the image */
+    gdImagePtr im;
+    /* Declare output files */
+    FILE *pngout;
+    /* Declare color index */
+    int black;
+
+    // 8 x 16
+    gdFontPtr largeFont = gdFontGetLarge();
+    printf("width and height %d\n%d\n", largeFont->w, largeFont->h);
+
+    // 9 x 15
+    gdFontPtr giantFont = gdFontGetGiant();
+    printf("width and height %d\n%d\n", giantFont->w, giantFont->h);
+
+    /* Allocate the image: pixel sizes */
+    // 3 extra rows for the key
+    im = gdImageCreate(CELL_PIXEL_SIZE * GRID_WIDTH, CELL_PIXEL_SIZE * (GRID_HEIGHT + 3));
+    int width_pixels = CELL_PIXEL_SIZE * GRID_WIDTH;
+    int height_pixels = CELL_PIXEL_SIZE * (GRID_HEIGHT + 3);
+
+    /* Allocate the color white
+    Since this is the first color in a new image, it will
+    be the background color. */
+    gdImageColorAllocate(im, 255, 255, 255);
+
+    /* Allocate the color black. */
+    black = gdImageColorAllocate(im, 0, 0, 0);
+
+    // draw grid lines
+    for (int8_t x = 0; x < GRID_WIDTH; x++)
+    {
+        gdImageLine(im, x * CELL_PIXEL_SIZE, 0, x * CELL_PIXEL_SIZE, height_pixels - 1, black);
+    }
+    for (int8_t y = 0; y < GRID_HEIGHT + 3; y++)
+    {
+        gdImageLine(im, 0, y * CELL_PIXEL_SIZE, width_pixels - 1, y * CELL_PIXEL_SIZE, black);
+    }
+    
+    // draw main grid
+    int SUBDIVISION_PIXEL_SIZE = CELL_PIXEL_SIZE / 3;
+    for (int8_t y = 0; y < GRID_HEIGHT; y++)
+    {
+        for (int8_t x = 0; x < GRID_WIDTH; x++)
+        {
+            Cell cell = grid[y][x];
+            int draw_x, draw_y;
+            int corner_x = x * CELL_PIXEL_SIZE, corner_y = y * CELL_PIXEL_SIZE;
+            if (cell.number != NO_NUMBER)
+            {
+                // draw number
+                draw_y = corner_y + SUBDIVISION_PIXEL_SIZE * 2;
+                int number = cell.number;
+                if (cell.number >= 10)
+                {
+                    draw_x = corner_x + SUBDIVISION_PIXEL_SIZE;
+                    gdImageChar(im, largeFont, draw_x, draw_y, number / 10 + '0', black);
+                    draw_x += SUBDIVISION_PIXEL_SIZE;
+                    gdImageChar(im, largeFont, draw_x, draw_y, number % 10 + '0', black);
+                } else {
+                    draw_x = corner_x + SUBDIVISION_PIXEL_SIZE * 2;
+                    gdImageChar(im, largeFont, draw_x, draw_y, number + '0', black);
+                }
+            }
+            else if (cell.letter != NO_LETTER)
+            {
+                // draw letter
+                draw_x = corner_x + SUBDIVISION_PIXEL_SIZE;
+                draw_y = corner_y + SUBDIVISION_PIXEL_SIZE;
+                gdImageChar(im, giantFont, draw_x, draw_y, cell.letter, black);
+            } else {
+                // empty
+                gdImageLine(im, corner_x, corner_y, corner_x + CELL_PIXEL_SIZE, corner_y + CELL_PIXEL_SIZE, black);
+            }
+        }
+    }
+    
+    // gdImageChar(im, largeFont, 3, 3, 'a', black);
+    // gdImageChar(im, giantFont, 20, 20, 'b', black);
+
+    /* Open a file for writing. "wb" means "write binary", important
+      under MSDOS, harmless under Unix. */
+    pngout = fopen("puzzle.png", "wb");
+
+    /* Output the image to the disk file in PNG format. */
+    gdImagePng(im, pngout);
+
+    /* Close the files. */
+    fclose(pngout);
+
+    /* Destroy the image in memory. */
+    gdImageDestroy(im);
+}
+
+void image_test()
+{
+    /* Declare the image */
+    gdImagePtr im;
+    /* Declare output files */
+    FILE *pngout, *jpegout;
+    /* Declare color indexes */
+    int black;
+    int white;
+
+    // 8 x 16
+    gdFontPtr largeFont = gdFontGetLarge();
+    printf("width and height %d\n%d\n", largeFont->w, largeFont->h);
+
+    // 9 x 15
+    gdFontPtr giantFont = gdFontGetGiant();
+    printf("width and height %d\n%d\n", giantFont->w, giantFont->h);
+
+    /* Allocate the image: 64 pixels across by 64 pixels tall */
+    im = gdImageCreate(64, 64);
+
+    /* Allocate the color black (red, green and blue all minimum).
+      Since this is the first color in a new image, it will
+      be the background color. */
+    black = gdImageColorAllocate(im, 0, 0, 0);
+
+    /* Allocate the color white (red, green and blue all maximum). */
+    white = gdImageColorAllocate(im, 255, 255, 255);
+
+    int blue = gdImageColorAllocate(im, 200, 200, 255);
+    gdImageChar(im, largeFont, 3, 3, 'a', blue);
+    gdImageChar(im, giantFont, 20, 20, 'b', blue);
+
+    /* Draw a line from the upper left to the lower right,
+      using white color index. */
+    gdImageLine(im, 0, 0, 63, 63, white);
+
+    /* Open a file for writing. "wb" means "write binary", important
+      under MSDOS, harmless under Unix. */
+    pngout = fopen("test.png", "wb");
+
+    /* Output the image to the disk file in PNG format. */
+    gdImagePng(im, pngout);
+
+    /* Close the files. */
+    fclose(pngout);
+
+    /* Destroy the image in memory. */
+    gdImageDestroy(im);
+}
+
+int main() {
+    run_game_with_image();
+    printf("Image created\n");
 }
