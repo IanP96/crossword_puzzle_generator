@@ -435,10 +435,7 @@ void run_game_with_image(void) {
     char key[ALPHABET_SIZE];
     create_puzzle(grid, key);
 
-    if (DEBUG)
-    {
-        write_puzzle_to_text_files(grid, key);
-    }
+    write_puzzle_to_text_files(grid, key);
     
     // cell 51 x 51
     int CELL_PIXEL_SIZE = 51;
@@ -496,7 +493,7 @@ void run_game_with_image(void) {
                 // draw number
                 draw_y = corner_y + SUBDIVISION_PIXEL_SIZE * 2;
                 int number = cell.number;
-                if (cell.number >= 10)
+                if (number >= 10)
                 {
                     draw_x = corner_x + SUBDIVISION_PIXEL_SIZE;
                     gdImageChar(im, largeFont, draw_x, draw_y, number / 10 + '0', black);
@@ -520,8 +517,37 @@ void run_game_with_image(void) {
         }
     }
     
-    // gdImageChar(im, largeFont, 3, 3, 'a', black);
-    // gdImageChar(im, giantFont, 20, 20, 'b', black);
+    // draw key
+    for (int8_t i = 0; i < ALPHABET_SIZE; i++)
+    {
+        int corner_x = (i % 13) * CELL_PIXEL_SIZE;
+        int corner_y = (GRID_HEIGHT + 1 + (i >= 13 ? 1 : 0)) * CELL_PIXEL_SIZE;
+        int draw_x, draw_y;
+        if (i < THRESHOLD)
+        {
+            // hidden
+            // draw number
+            draw_y = corner_y + SUBDIVISION_PIXEL_SIZE * 2;
+            int number = i;
+            if (number >= 10)
+            {
+                draw_x = corner_x + SUBDIVISION_PIXEL_SIZE;
+                gdImageChar(im, largeFont, draw_x, draw_y, number / 10 + '0', black);
+                draw_x += SUBDIVISION_PIXEL_SIZE;
+                gdImageChar(im, largeFont, draw_x, draw_y, number % 10 + '0', black);
+            } else {
+                draw_x = corner_x + SUBDIVISION_PIXEL_SIZE * 2;
+                gdImageChar(im, largeFont, draw_x, draw_y, number + '0', black);
+            }
+
+        } else {
+            // show letter
+            // draw letter
+            draw_x = corner_x + SUBDIVISION_PIXEL_SIZE;
+            draw_y = corner_y + SUBDIVISION_PIXEL_SIZE;
+            gdImageChar(im, giantFont, draw_x, draw_y, key[i], black);
+        }
+    }
 
     /* Open a file for writing. "wb" means "write binary", important
       under MSDOS, harmless under Unix. */
@@ -537,58 +563,7 @@ void run_game_with_image(void) {
     gdImageDestroy(im);
 }
 
-void image_test()
-{
-    /* Declare the image */
-    gdImagePtr im;
-    /* Declare output files */
-    FILE *pngout, *jpegout;
-    /* Declare color indexes */
-    int black;
-    int white;
-
-    // 8 x 16
-    gdFontPtr largeFont = gdFontGetLarge();
-    printf("width and height %d\n%d\n", largeFont->w, largeFont->h);
-
-    // 9 x 15
-    gdFontPtr giantFont = gdFontGetGiant();
-    printf("width and height %d\n%d\n", giantFont->w, giantFont->h);
-
-    /* Allocate the image: 64 pixels across by 64 pixels tall */
-    im = gdImageCreate(64, 64);
-
-    /* Allocate the color black (red, green and blue all minimum).
-      Since this is the first color in a new image, it will
-      be the background color. */
-    black = gdImageColorAllocate(im, 0, 0, 0);
-
-    /* Allocate the color white (red, green and blue all maximum). */
-    white = gdImageColorAllocate(im, 255, 255, 255);
-
-    int blue = gdImageColorAllocate(im, 200, 200, 255);
-    gdImageChar(im, largeFont, 3, 3, 'a', blue);
-    gdImageChar(im, giantFont, 20, 20, 'b', blue);
-
-    /* Draw a line from the upper left to the lower right,
-      using white color index. */
-    gdImageLine(im, 0, 0, 63, 63, white);
-
-    /* Open a file for writing. "wb" means "write binary", important
-      under MSDOS, harmless under Unix. */
-    pngout = fopen("test.png", "wb");
-
-    /* Output the image to the disk file in PNG format. */
-    gdImagePng(im, pngout);
-
-    /* Close the files. */
-    fclose(pngout);
-
-    /* Destroy the image in memory. */
-    gdImageDestroy(im);
-}
-
 int main() {
     run_game_with_image();
-    printf("Image created\n");
+    printf("Image and text files created\n");
 }
