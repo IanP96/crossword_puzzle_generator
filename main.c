@@ -24,7 +24,7 @@ int NUM_WORDS = 3103;
 char NO_LETTER = '_';
 char ALPHABET[] = "abcdefghijklmnopqrstuvwxyz";
 char FIRST_LETTER = 'a';
-bool DEBUG = true;
+bool DEBUG = false;
 int8_t NO_NUMBER = -1;
 // todo tweak threshold
 // hide all letters in key before this threshold. higher value -> harder
@@ -396,7 +396,8 @@ void print_puzzle_to_file(FILE *file, Grid grid, char key[ALPHABET_SIZE], bool s
     }
 }
 
-void create_puzzle(Grid grid, char key[ALPHABET_SIZE]) {
+void create_puzzle(Grid grid, char key[ALPHABET_SIZE])
+{
     while (!create_grid(grid))
         ;
     if (DEBUG)
@@ -407,7 +408,8 @@ void create_puzzle(Grid grid, char key[ALPHABET_SIZE]) {
     encode_grid(grid, key);
 }
 
-void write_puzzle_to_text_files(Grid grid, char key[ALPHABET_SIZE]) {
+void write_puzzle_to_text_files(Grid grid, char key[ALPHABET_SIZE])
+{
     FILE *puzzle_file = fopen(PUZZLE_FILE_NAME, "w");
     FILE *solution_file = fopen(SOLUTION_FILE_NAME, "w");
 
@@ -430,13 +432,14 @@ void run_game_with_text_files(void)
     write_puzzle_to_text_files(grid, key);
 }
 
-void run_game_with_image(void) {
+void run_game_with_image(void)
+{
     Grid grid;
     char key[ALPHABET_SIZE];
     create_puzzle(grid, key);
 
     write_puzzle_to_text_files(grid, key);
-    
+
     // cell 51 x 51
     int CELL_PIXEL_SIZE = 51;
 
@@ -446,14 +449,13 @@ void run_game_with_image(void) {
     FILE *pngout;
     /* Declare color index */
     int black;
+    int light_grey;
 
     // 8 x 16
     gdFontPtr largeFont = gdFontGetLarge();
-    printf("width and height %d\n%d\n", largeFont->w, largeFont->h);
 
     // 9 x 15
     gdFontPtr giantFont = gdFontGetGiant();
-    printf("width and height %d\n%d\n", giantFont->w, giantFont->h);
 
     /* Allocate the image: pixel sizes */
     // 3 extra rows for the key
@@ -469,16 +471,19 @@ void run_game_with_image(void) {
     /* Allocate the color black. */
     black = gdImageColorAllocate(im, 0, 0, 0);
 
+    int light_grey_brightness = 250;
+    light_grey = gdImageColorAllocate(im, light_grey_brightness, light_grey_brightness, light_grey_brightness);
+
     // draw grid lines
     for (int8_t x = 0; x < GRID_WIDTH; x++)
     {
-        gdImageLine(im, x * CELL_PIXEL_SIZE, 0, x * CELL_PIXEL_SIZE, height_pixels - 1, black);
+        gdImageLine(im, x * CELL_PIXEL_SIZE, height_pixels - CELL_PIXEL_SIZE * 2, x * CELL_PIXEL_SIZE, height_pixels - 1, black);
     }
-    for (int8_t y = 0; y < GRID_HEIGHT + 3; y++)
+    for (int8_t y = GRID_HEIGHT + 1; y < GRID_HEIGHT + 3; y++)
     {
         gdImageLine(im, 0, y * CELL_PIXEL_SIZE, width_pixels - 1, y * CELL_PIXEL_SIZE, black);
     }
-    
+
     // draw main grid
     int SUBDIVISION_PIXEL_SIZE = CELL_PIXEL_SIZE / 3;
     for (int8_t y = 0; y < GRID_HEIGHT; y++)
@@ -490,6 +495,7 @@ void run_game_with_image(void) {
             int corner_x = x * CELL_PIXEL_SIZE, corner_y = y * CELL_PIXEL_SIZE;
             if (cell.number != NO_NUMBER)
             {
+                gdImageRectangle(im, corner_x, corner_y, corner_x + CELL_PIXEL_SIZE, corner_y + CELL_PIXEL_SIZE, black);
                 // draw number
                 draw_y = corner_y + SUBDIVISION_PIXEL_SIZE * 2;
                 int number = cell.number;
@@ -499,24 +505,30 @@ void run_game_with_image(void) {
                     gdImageChar(im, largeFont, draw_x, draw_y, number / 10 + '0', black);
                     draw_x += SUBDIVISION_PIXEL_SIZE;
                     gdImageChar(im, largeFont, draw_x, draw_y, number % 10 + '0', black);
-                } else {
+                }
+                else
+                {
                     draw_x = corner_x + SUBDIVISION_PIXEL_SIZE * 2;
                     gdImageChar(im, largeFont, draw_x, draw_y, number + '0', black);
                 }
             }
             else if (cell.letter != NO_LETTER)
             {
+                gdImageRectangle(im, corner_x, corner_y, corner_x + CELL_PIXEL_SIZE, corner_y + CELL_PIXEL_SIZE, black);
                 // draw letter
                 draw_x = corner_x + SUBDIVISION_PIXEL_SIZE;
                 draw_y = corner_y + SUBDIVISION_PIXEL_SIZE;
                 gdImageChar(im, giantFont, draw_x, draw_y, cell.letter, black);
-            } else {
+            }
+            else
+            {
                 // empty
-                gdImageLine(im, corner_x, corner_y, corner_x + CELL_PIXEL_SIZE, corner_y + CELL_PIXEL_SIZE, black);
+                // gdImageLine(im, corner_x, corner_y, corner_x + CELL_PIXEL_SIZE, corner_y + CELL_PIXEL_SIZE, black);
+                 gdImageFilledRectangle(im, corner_x + 1, corner_y + 1, corner_x + CELL_PIXEL_SIZE, corner_y + CELL_PIXEL_SIZE, light_grey);
             }
         }
     }
-    
+
     // draw key
     for (int8_t i = 0; i < ALPHABET_SIZE; i++)
     {
@@ -535,12 +547,15 @@ void run_game_with_image(void) {
                 gdImageChar(im, largeFont, draw_x, draw_y, number / 10 + '0', black);
                 draw_x += SUBDIVISION_PIXEL_SIZE;
                 gdImageChar(im, largeFont, draw_x, draw_y, number % 10 + '0', black);
-            } else {
+            }
+            else
+            {
                 draw_x = corner_x + SUBDIVISION_PIXEL_SIZE * 2;
                 gdImageChar(im, largeFont, draw_x, draw_y, number + '0', black);
             }
-
-        } else {
+        }
+        else
+        {
             // show letter
             // draw letter
             draw_x = corner_x + SUBDIVISION_PIXEL_SIZE;
@@ -563,7 +578,8 @@ void run_game_with_image(void) {
     gdImageDestroy(im);
 }
 
-int main() {
+int main()
+{
     run_game_with_image();
     printf("Image and text files created\n");
 }
