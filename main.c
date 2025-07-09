@@ -10,14 +10,17 @@
 #include <gdfontl.h>
 #include <gdfontg.h>
 
+// todo clean up code
+// todo add comments
+
 #define GRID_WIDTH 13
 #define GRID_HEIGHT GRID_WIDTH
 #define ALPHABET_SIZE 26
 #define WORD_SIZE 5
 
 char *ALL_WORDS_FILE_NAME = "all_words.txt";
-char *PUZZLE_FILE_NAME = "puzzle.txt";
-char *SOLUTION_FILE_NAME = "solution.txt";
+char *PUZZLE_FILE_NAME = "puzzle%c.txt";
+char *SOLUTION_FILE_NAME = "solution%c.txt";
 // total number of words in text file
 int NUM_WORDS = 3103;
 
@@ -28,7 +31,7 @@ bool DEBUG = false;
 int8_t NO_NUMBER = -1;
 // todo tweak threshold
 // hide all letters in key before this threshold. higher value -> harder
-int THRESHOLD = ALPHABET_SIZE / 2 + 1;
+int8_t BASE_THRESHOLD = ALPHABET_SIZE / 2 + 1;
 
 typedef struct Cell
 {
@@ -341,7 +344,7 @@ void random_letter_sequence(char letters[ALPHABET_SIZE])
     }
 }
 
-void encode_grid(Grid grid, char key[ALPHABET_SIZE])
+void encode_grid(Grid grid, char key[ALPHABET_SIZE], int8_t threshold)
 {
     random_letter_sequence(key);
     for (int8_t y = 0; y < GRID_HEIGHT; y++)
@@ -353,7 +356,7 @@ void encode_grid(Grid grid, char key[ALPHABET_SIZE])
             {
                 continue;
             }
-            for (int8_t letter_num = 0; letter_num < THRESHOLD; letter_num++)
+            for (int8_t letter_num = 0; letter_num < threshold; letter_num++)
             {
                 char letter = key[letter_num];
                 if (letter == (*cell).letter)
@@ -366,7 +369,7 @@ void encode_grid(Grid grid, char key[ALPHABET_SIZE])
     }
 }
 
-void print_puzzle_to_file(FILE *file, Grid grid, char key[ALPHABET_SIZE], bool show_solutions)
+void print_puzzle_to_file(FILE *file, Grid grid, char key[ALPHABET_SIZE], bool show_solutions, int8_t threshold)
 {
     for (int8_t y = 0; y < GRID_HEIGHT; y++)
     {
@@ -391,12 +394,12 @@ void print_puzzle_to_file(FILE *file, Grid grid, char key[ALPHABET_SIZE], bool s
     for (int8_t i = 0; i < ALPHABET_SIZE; i++)
     {
         fprintf(file, "%2d: ", i);
-        bool show_letter = i >= THRESHOLD || show_solutions;
+        bool show_letter = i >= threshold || show_solutions;
         fprintf(file, "%c\n", show_letter ? key[i] : '?');
     }
 }
 
-void create_puzzle(Grid grid, char key[ALPHABET_SIZE])
+void create_puzzle(Grid grid, char key[ALPHABET_SIZE], int8_t threshold)
 {
     while (!create_grid(grid))
         ;
@@ -405,40 +408,44 @@ void create_puzzle(Grid grid, char key[ALPHABET_SIZE])
         printf("\nFinal grid:\n");
         print_grid_letters(grid);
     }
-    encode_grid(grid, key);
+    encode_grid(grid, key, threshold);
 }
 
-void write_puzzle_to_text_files(Grid grid, char key[ALPHABET_SIZE])
+void write_puzzle_to_text_files(Grid grid, char key[ALPHABET_SIZE], int8_t threshold, char file_name_suffix)
 {
-    FILE *puzzle_file = fopen(PUZZLE_FILE_NAME, "w");
-    FILE *solution_file = fopen(SOLUTION_FILE_NAME, "w");
+    char final_puzzle_name[200];
+    sprintf(final_puzzle_name, "puzzle%c.txt", file_name_suffix);
+    FILE *puzzle_file = fopen(final_puzzle_name, "w");
+    char final_solution_name[200];
+    sprintf(final_solution_name, "solution%c.txt", file_name_suffix);
+    FILE *solution_file = fopen(final_solution_name, "w");
 
     if (DEBUG)
     {
         printf("Printing results to files\n");
     }
-    print_puzzle_to_file(puzzle_file, grid, key, false);
-    print_puzzle_to_file(solution_file, grid, key, true);
+    print_puzzle_to_file(puzzle_file, grid, key, false, threshold);
+    print_puzzle_to_file(solution_file, grid, key, true, threshold);
     fclose(puzzle_file);
     fclose(solution_file);
 }
 
-void run_game_with_text_files(void)
+void run_game_with_text_files(int8_t threshold, char file_name_suffix)
 {
     Grid grid;
     char key[ALPHABET_SIZE];
-    create_puzzle(grid, key);
+    create_puzzle(grid, key, threshold);
 
-    write_puzzle_to_text_files(grid, key);
+    write_puzzle_to_text_files(grid, key, threshold, file_name_suffix);
 }
 
-void run_game_with_image(void)
+void run_game_with_image(int threshold, char file_name_suffix)
 {
     Grid grid;
     char key[ALPHABET_SIZE];
-    create_puzzle(grid, key);
+    create_puzzle(grid, key, threshold);
 
-    write_puzzle_to_text_files(grid, key);
+    write_puzzle_to_text_files(grid, key, threshold, file_name_suffix);
 
     // cell 51 x 51
     int CELL_PIXEL_SIZE = 51;
@@ -462,6 +469,10 @@ void run_game_with_image(void)
     int width_pixels = CELL_PIXEL_SIZE * GRID_WIDTH;
     int height_pixels = CELL_PIXEL_SIZE * (GRID_HEIGHT + 3);
     int missing_letter_column_width = CELL_PIXEL_SIZE * 2 / 3;
+    if (DEBUG)
+    {
+        printf("Creating image\n");
+    }
     im = gdImageCreate(width_pixels + missing_letter_column_width * 3, height_pixels);
 
     /* Allocate the color white
@@ -525,7 +536,7 @@ void run_game_with_image(void)
             {
                 // empty
                 // gdImageLine(im, corner_x, corner_y, corner_x + CELL_PIXEL_SIZE, corner_y + CELL_PIXEL_SIZE, black);
-                 gdImageFilledRectangle(im, corner_x + 1, corner_y + 1, corner_x + CELL_PIXEL_SIZE, corner_y + CELL_PIXEL_SIZE, light_grey);
+                gdImageFilledRectangle(im, corner_x + 1, corner_y + 1, corner_x + CELL_PIXEL_SIZE, corner_y + CELL_PIXEL_SIZE, light_grey);
             }
         }
     }
@@ -536,7 +547,7 @@ void run_game_with_image(void)
         int corner_x = (i % 13) * CELL_PIXEL_SIZE;
         int corner_y = (GRID_HEIGHT + 1 + (i >= 13 ? 1 : 0)) * CELL_PIXEL_SIZE;
         int draw_x, draw_y;
-        if (i < THRESHOLD)
+        if (i < threshold)
         {
             // hidden
             // draw number
@@ -572,7 +583,7 @@ void run_game_with_image(void)
     for (char letter = 'a'; letter <= 'z'; letter++)
     {
         bool missing = false;
-        for (int8_t i = 0; i < THRESHOLD; i++)
+        for (int8_t i = 0; i < threshold; i++)
         {
             if (key[i] == letter)
             {
@@ -589,16 +600,24 @@ void run_game_with_image(void)
         {
             column = 1;
             draw_x += missing_letter_column_width;
-        } else {
+        }
+        else
+        {
             column = 0;
             draw_y += missing_letter_column_width;
             draw_x -= missing_letter_column_width;
         }
     }
 
+    if (DEBUG)
+    {
+        printf("Creating final png\n");
+    }
     /* Open a file for writing. "wb" means "write binary", important
       under MSDOS, harmless under Unix. */
-    pngout = fopen("puzzle.png", "wb");
+    char image_file_name[200];
+    sprintf(image_file_name, "puzzle%c.png", file_name_suffix);
+    pngout = fopen(image_file_name, "wb");
 
     /* Output the image to the disk file in PNG format. */
     gdImagePng(im, pngout);
@@ -612,6 +631,11 @@ void run_game_with_image(void)
 
 int main()
 {
-    run_game_with_image();
-    printf("Image and text files created\n");
+    char suffixes[] = {'0', '1', '2', '3'};
+    int deltas[] = {-1, 0, 0, 1};
+    for (int8_t i = 0; i < 4; i++)
+    {
+        run_game_with_image(BASE_THRESHOLD + deltas[i], suffixes[i]);
+    }
+    printf("Images and text files created\n");
 }

@@ -5,3 +5,5 @@ solution.txt
 *.png
 *.jpg
 *.jpeg
+puzzle*.txt
+solution*.txt
