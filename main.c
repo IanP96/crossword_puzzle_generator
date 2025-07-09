@@ -459,9 +459,10 @@ void run_game_with_image(void)
 
     /* Allocate the image: pixel sizes */
     // 3 extra rows for the key
-    im = gdImageCreate(CELL_PIXEL_SIZE * GRID_WIDTH, CELL_PIXEL_SIZE * (GRID_HEIGHT + 3));
     int width_pixels = CELL_PIXEL_SIZE * GRID_WIDTH;
     int height_pixels = CELL_PIXEL_SIZE * (GRID_HEIGHT + 3);
+    int missing_letter_column_width = CELL_PIXEL_SIZE * 2 / 3;
+    im = gdImageCreate(width_pixels + missing_letter_column_width * 3, height_pixels);
 
     /* Allocate the color white
     Since this is the first color in a new image, it will
@@ -561,6 +562,37 @@ void run_game_with_image(void)
             draw_x = corner_x + SUBDIVISION_PIXEL_SIZE;
             draw_y = corner_y + SUBDIVISION_PIXEL_SIZE;
             gdImageChar(im, giantFont, draw_x, draw_y, key[i], black);
+        }
+    }
+
+    // draw missing letter grid
+    int draw_x = width_pixels + missing_letter_column_width;
+    int draw_y = missing_letter_column_width;
+    int8_t column = 0;
+    for (char letter = 'a'; letter <= 'z'; letter++)
+    {
+        bool missing = false;
+        for (int8_t i = 0; i < THRESHOLD; i++)
+        {
+            if (key[i] == letter)
+            {
+                missing = true;
+                break;
+            }
+        }
+        if (!missing)
+        {
+            continue;
+        }
+        gdImageChar(im, largeFont, draw_x, draw_y, letter, black);
+        if (column == 0)
+        {
+            column = 1;
+            draw_x += missing_letter_column_width;
+        } else {
+            column = 0;
+            draw_y += missing_letter_column_width;
+            draw_x -= missing_letter_column_width;
         }
     }
 
