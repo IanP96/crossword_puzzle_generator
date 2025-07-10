@@ -24,6 +24,8 @@
 
 // File name of text file containing all words to use
 char *ALL_WORDS_FILE_NAME = "all_words.txt";
+// Folder name to store output files
+char *OUTPUT_FOLDER_NAME = "output";
 // Total number of words in text file
 int NUM_WORDS = 3103;
 // Placeholder for grid cell with no letter in it
@@ -31,7 +33,7 @@ char NO_LETTER = '_';
 char ALPHABET[] = "abcdefghijklmnopqrstuvwxyz";
 char FIRST_LETTER = 'a';
 // Set to true to print debug messages
-bool DEBUG = false;
+bool DEBUG = true;
 // Placeholder for grid cell with no code number in it
 int8_t NO_NUMBER = -1;
 // Hide all letters in the key before this threshold. higher value -> harder. Should be between 0 and 26
@@ -503,7 +505,7 @@ void create_puzzle(Grid grid, char key[ALPHABET_SIZE], int8_t threshold)
 
 /**
  * @brief Write a finished puzzle to text files
- * 
+ *
  * @param grid encoded puzzle grid
  * @param key key of letters
  * @param threshold difficulty threshold
@@ -516,25 +518,30 @@ void write_puzzle_to_text_files(Grid grid, char key[ALPHABET_SIZE], int8_t thres
     {
         printf("Printing results to files\n");
     }
-    char final_solution_name[200];
-    sprintf(final_solution_name, "solution%c.txt", file_name_suffix);
+    char final_solution_name[100];
+    sprintf(final_solution_name, "%s/solution%c.txt", OUTPUT_FOLDER_NAME, file_name_suffix);
     FILE *solution_file = fopen(final_solution_name, "w");
     print_puzzle_to_file(solution_file, grid, key, true, threshold);
     fclose(solution_file);
 
     if (write_puzzle_file)
     {
-        char final_puzzle_name[200];
-        sprintf(final_puzzle_name, "puzzle%c.txt", file_name_suffix);
+        char final_puzzle_name[100];
+        sprintf(final_puzzle_name, "%s/puzzle%c.txt", OUTPUT_FOLDER_NAME, file_name_suffix);
         FILE *puzzle_file = fopen(final_puzzle_name, "w");
         print_puzzle_to_file(puzzle_file, grid, key, false, threshold);
         fclose(puzzle_file);
     }
+    if (DEBUG)
+    {
+        printf("Writing to text files completed\n");
+    }
+    
 }
 
 /**
  * @brief Create a puzzle and write the puzzle and solution to text files
- * 
+ *
  * @param threshold difficulty threshold
  * @param file_name_suffix character to put at end of each filename
  */
@@ -554,9 +561,9 @@ void run_game_with_image(int threshold, char file_name_suffix)
     create_puzzle(grid, key, threshold);
 
     write_puzzle_to_text_files(grid, key, threshold, file_name_suffix, false);
-    
+
     FILE *pngout;
-    
+
     // 8 x 16
     gdFontPtr large_font = gdFontGetLarge();
     // 9 x 15
@@ -564,10 +571,10 @@ void run_game_with_image(int threshold, char file_name_suffix)
 
     int font_width = 10;
     int font_height = 17;
-    
+
     // Size of each grid cell in pixels
     int CELL_PIXEL_SIZE = 40;
-    
+
     // Width of grid in pixels
     int width_pixels = CELL_PIXEL_SIZE * GRID_WIDTH;
     // Height of grid in pixels, 3 extra rows for the key
@@ -587,16 +594,6 @@ void run_game_with_image(int threshold, char file_name_suffix)
 
     int light_grey_brightness = 250;
     int light_grey = gdImageColorAllocate(img, light_grey_brightness, light_grey_brightness, light_grey_brightness);
-
-    // // Draw grid lines
-    // for (int8_t x = 0; x < GRID_WIDTH; x++)
-    // {
-    //     gdImageLine(img, x * CELL_PIXEL_SIZE, height_pixels - CELL_PIXEL_SIZE * 2, x * CELL_PIXEL_SIZE, height_pixels - 1, black);
-    // }
-    // for (int8_t y = GRID_HEIGHT + 1; y < GRID_HEIGHT + 3; y++)
-    // {
-    //     gdImageLine(img, 0, y * CELL_PIXEL_SIZE, width_pixels - 1, y * CELL_PIXEL_SIZE, black);
-    // }
 
     // Draw main grid
     int letter_offset_x = CELL_PIXEL_SIZE / 2 - font_width / 2;
@@ -646,7 +643,7 @@ void run_game_with_image(int threshold, char file_name_suffix)
             if (draw_cell_outline)
             {
                 gdImageRectangle(img, corner_x, corner_y, corner_x + CELL_PIXEL_SIZE, corner_y + CELL_PIXEL_SIZE, black);
-            } 
+            }
         }
     }
 
@@ -722,8 +719,8 @@ void run_game_with_image(int threshold, char file_name_suffix)
         printf("Creating final png\n");
     }
     // Open a file for writing. "wb" means "write binary", important under MSDOS, harmless under Unix
-    char image_file_name[200];
-    sprintf(image_file_name, "puzzle%c.png", file_name_suffix);
+    char image_file_name[100];
+    sprintf(image_file_name, "%s/puzzle%c.png", OUTPUT_FOLDER_NAME, file_name_suffix);
     pngout = fopen(image_file_name, "wb");
 
     // Output the image to the disk file in PNG format.

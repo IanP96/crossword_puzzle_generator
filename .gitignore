@@ -1,9 +1,3 @@
 *.o
 main
-puzzle.txt
-solution.txt
-*.png
-*.jpg
-*.jpeg
-puzzle*.txt
-solution*.txt
+output
