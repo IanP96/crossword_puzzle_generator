@@ -1,6 +1,6 @@
 # Define variables
 CC = gcc
-CFLAGS = -Wall -Wextra -I/opt/homebrew/include
+CFLAGS = -Wall -Wextra -I/opt/homebrew/include -pedantic
 LDFLAGS = -L/opt/homebrew/lib -lgd -lpng -lz -ljpeg -lfreetype -lm
 
 # Define the executable name
