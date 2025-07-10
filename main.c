@@ -33,7 +33,7 @@ char NO_LETTER = '_';
 char ALPHABET[] = "abcdefghijklmnopqrstuvwxyz";
 char FIRST_LETTER = 'a';
 // Set to true to print debug messages
-bool DEBUG = true;
+bool DEBUG = false;
 // Placeholder for grid cell with no code number in it
 int8_t NO_NUMBER = -1;
 // Hide all letters in the key before this threshold. higher value -> harder. Should be between 0 and 26
