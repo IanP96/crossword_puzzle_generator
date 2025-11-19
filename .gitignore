@@ -1,3 +1,5 @@
 *.o
 main
 output
+
+.DS_Store
