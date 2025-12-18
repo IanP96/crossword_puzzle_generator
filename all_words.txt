@@ -220,7 +220,6 @@ beech
 beets
 befit
 began
-begat
 beget
 begin
 begot
